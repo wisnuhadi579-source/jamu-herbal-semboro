@@ -64,6 +64,42 @@ function getSaleDate(s: Sale): string {
   return "";
 }
 
+const PRODUCT_ORDER = [
+  "H",
+  "KS",
+  "SS",
+  "SP",
+  "M",
+  "K",
+  "O",
+  "P",
+  "B",
+  "HJ",
+  "PB",
+  "PLS",
+  "DRT",
+  "KCM",
+  "ML"
+];
+
+function sortProductsByOrder(prods: Product[]): Product[] {
+  return [...prods].sort((a, b) => {
+    const getCode = (p: Product) => {
+      const code = (p.sku || p.code || p.kode || p.name || "").trim().toUpperCase();
+      if (code === "MADU LANANG" || code.includes("MADU")) return "ML";
+      return code;
+    };
+    const codeA = getCode(a);
+    const codeB = getCode(b);
+    let idxA = PRODUCT_ORDER.indexOf(codeA);
+    let idxB = PRODUCT_ORDER.indexOf(codeB);
+    if (idxA === -1) idxA = 999;
+    if (idxB === -1) idxB = 999;
+    if (idxA !== idxB) return idxA - idxB;
+    return (a.urutan || 0) - (b.urutan || 0);
+  });
+}
+
 const nav: { id: ViewName; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "dashboard", label: "Ringkasan", icon: LayoutDashboard },
   { id: "inventory", label: "Barang & stok", icon: Package },
@@ -143,7 +179,7 @@ export default function App() {
     setError("");
     try {
       const store = await fetchStore();
-      setProducts(store.products);
+      setProducts(sortProductsByOrder(store.products));
       setSales(store.sales);
       setIsLocked(!store.canEdit);
     } catch (e) {
@@ -216,8 +252,10 @@ export default function App() {
   }, [sales, currentDate]);
 
   const lowStock = products.filter(p => p.stock <= p.min_stock);
-  const filteredProducts = products.filter(p =>
-    `${p.name} ${p.sku ?? ""} ${p.category ?? ""}`.toLowerCase().includes(search.toLowerCase())
+  const filteredProducts = sortProductsByOrder(
+    products.filter(p =>
+      `${p.name} ${p.sku ?? ""} ${p.category ?? ""}`.toLowerCase().includes(search.toLowerCase())
+    )
   );
   const filteredSales = sales.filter(s => {
     const matchSearch = `${s.invoice_no} ${s.customer_name ?? ""} ${s.notes ?? ""}`.toLowerCase().includes(search.toLowerCase());
@@ -973,7 +1011,7 @@ export default function App() {
               </p>
 
               <div className="daily-stock-grid">
-                {products.map(p => {
+                {sortProductsByOrder(products).map(p => {
                   const label = `${p.sku || p.code || p.name} (${p.unit})`;
                   const currentVal = dailyStockDraft[p.id];
                   const currentStatus =
@@ -1375,10 +1413,7 @@ function CatatPenjualanForm({
   onSuccess: (msg: string) => void;
   onCancel?: () => void;
 }) {
-  const [tanggal, setTanggal] = useState(() => {
-    const d = new Date();
-    return d.toISOString().slice(0, 10);
-  });
+  const [tanggal, setTanggal] = useState(() => getTodayIsoDate());
   const [amount, setAmount] = useState("");
   const [catatan, setCatatan] = useState("");
   const [saving, setSaving] = useState(false);
@@ -1557,7 +1592,7 @@ function DashboardView({
       <section className="welcome-banner">
         <div className="banner-content">
           <p className="banner-eyebrow">SELAMAT DATANG DI JAMU HERBAL</p>
-          <h2 className="banner-title">Usaha berjalan. Catatan tetap rapi.</h2>
+          <h2 className="banner-title">Semoga Usaha ini Selalu Dalam Keberkahan</h2>
           <div className="banner-desc">
             <p>Pantau penjualan dan persediaan hari ini.</p>
             <p>Lebih mudah mencatat, lebih tenang mengelola toko.</p>
@@ -1616,16 +1651,18 @@ function DashboardView({
 
         {/* 15 Stock Cards Grid */}
         <div className="stock-grid">
-          {products.map(p => {
-            const isSafe = p.stock > p.min_stock;
+          {sortProductsByOrder(products).map(p => {
+            const isWarning = p.stock <= p.min_stock;
+            const statusText = p.status || (isWarning ? "Stok menipis" : "Stok aman");
+            const statusClass = statusText.toLowerCase().includes("menipis") || isWarning ? "warning" : "safe";
             return (
-              <div className="stock-card" key={p.id}>
+              <div className={`stock-card ${statusClass}`} key={p.id}>
                 <div className="stock-card-top">
                   <span className="stock-card-code" title={p.name}>
                     {p.sku || p.name}
                   </span>
-                  <span className={`stock-status-pill ${isSafe ? "" : "warning"}`}>
-                    {isSafe ? "Stok aman" : "Stok tipis"}
+                  <span className={`stock-status-pill ${statusClass}`}>
+                    {statusText}
                   </span>
                 </div>
                 <div className="stock-card-body">
@@ -1852,7 +1889,7 @@ function InventoryView({
       </div>
 
       <div className="inventory-stock-grid">
-        {products.map(p => {
+        {sortProductsByOrder(products).map(p => {
           const isWarning = p.stock <= p.min_stock;
           const statusText = p.status || (isWarning ? "Stok menipis" : "Stok aman");
           const statusClass = statusText.toLowerCase().includes("menipis") || isWarning ? "warning" : "safe";
@@ -1860,7 +1897,7 @@ function InventoryView({
           const displayDate = p.last_updated || "26 Okt 2026";
 
           return (
-            <div key={p.id} className="inv-stock-card">
+            <div key={p.id} className={`inv-stock-card ${statusClass}`}>
               <div className="inv-card-header">
                 <span className="inv-card-code" title={p.name}>
                   {displayCode === "MADU LANANG" ? (
@@ -2207,18 +2244,21 @@ function ReportsView({
   onExport: () => void;
   onViewDetail: (s: Sale) => void;
 }) {
+  const todayIso = useMemo(() => getTodayIsoDate(), []);
+  const todayMonth = useMemo(() => todayIso.slice(0, 7), [todayIso]);
+
   const [periodMode, setPeriodMode] = useState<"daily" | "monthly">("monthly");
-  const [selectedMonth, setSelectedMonth] = useState<string>("2026-10");
+  const [selectedMonth, setSelectedMonth] = useState<string>(todayMonth);
 
   const latestDate = useMemo(() => {
     for (const s of sales) {
       const d = getSaleDate(s);
       if (d) return d;
     }
-    return "2026-10-28";
-  }, [sales]);
+    return todayIso;
+  }, [sales, todayIso]);
 
-  const [selectedDate, setSelectedDate] = useState<string>(latestDate);
+  const [selectedDate, setSelectedDate] = useState<string>(todayIso);
 
   // Sync selectedDate with latest available sale date when data changes
   useEffect(() => {

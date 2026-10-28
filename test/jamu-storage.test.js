@@ -90,30 +90,49 @@ test('3. Input Pendapatan (income): Menambah Transaksi Tanpa Mengurangi Stok Har
 
 test('4. Input Stok (stocktake): Menyesuaikan Stok Produk dan Menambah Catatan Stok Harian', async () => {
   const current = await getStore(true);
-  const prod1Id = current.state.products[0].id;
-  const prod2Id = current.state.products[1].id;
+  const prod1 = current.state.products[0];
+  const prod2 = current.state.products[1];
+  const prod1Id = prod1.id;
+  const prod2Id = prod2.id;
+  const originalStock1 = prod1.stock;
+  const originalStock2 = prod2.stock;
 
-  const res = await updateStore({
-    revision: current.revision,
-    action: 'stocktake',
-    payload: {
-      tanggal: '2026-10-28',
-      items: {
-        [prod1Id]: 15,
-        [prod2Id]: 20
+  try {
+    const res = await updateStore({
+      revision: current.revision,
+      action: 'stocktake',
+      payload: {
+        tanggal: '2026-10-28',
+        items: {
+          [prod1Id]: 15,
+          [prod2Id]: 20
+        }
       }
-    }
-  }, true);
+    }, true);
 
-  const prod1 = res.state.products.find(p => p.id === prod1Id);
-  assert.equal(prod1.stock, 15, 'Stok prod-1 harus menjadi 15');
+    const updatedProd1 = res.state.products.find(p => p.id === prod1Id);
+    assert.equal(updatedProd1.stock, 15, 'Stok prod-1 harus menjadi 15');
 
-  const prod2 = res.state.products.find(p => p.id === prod2Id);
-  assert.equal(prod2.stock, 20, 'Stok prod-2 harus menjadi 20');
+    const updatedProd2 = res.state.products.find(p => p.id === prod2Id);
+    assert.equal(updatedProd2.stock, 20, 'Stok prod-2 harus menjadi 20');
 
-  const stockEntry = res.state.dailyStocks.find(s => (s.produk_id === prod1Id || s.productId === prod1Id) && (s.tanggal === '2026-10-28' || s.date === '2026-10-28'));
-  assert.ok(stockEntry, 'Harus mencatat baris baru pada stok_harian untuk tanggal 2026-10-28');
-  assert.equal(stockEntry.qty || stockEntry.jumlah, 15);
+    const stockEntry = res.state.dailyStocks.find(s => (s.produk_id === prod1Id || s.productId === prod1Id) && (s.tanggal === '2026-10-28' || s.date === '2026-10-28'));
+    assert.ok(stockEntry, 'Harus mencatat baris baru pada stok_harian untuk tanggal 2026-10-28');
+    assert.equal(stockEntry.qty || stockEntry.jumlah, 15);
+  } finally {
+    const latest = await getStore(true);
+    await updateStore({
+      revision: latest.revision,
+      action: 'stocktake',
+      payload: {
+        tanggal: '2026-10-29',
+        items: {
+          [prod1Id]: originalStock1,
+          [prod2Id]: originalStock2
+        }
+      }
+    }, true);
+  }
 });
 
 test('5. Keamanan Akses: Viewer Tidak Dapat Mengubah Data (403 Forbidden)', async () => {

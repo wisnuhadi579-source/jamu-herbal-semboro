@@ -212,6 +212,8 @@ button:disabled {
   display: flex;
   flex-direction: column;
   background-color: #f7f9f6;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .topbar {
@@ -301,6 +303,8 @@ button:disabled {
   margin: 0 auto;
   padding: 26px 36px 48px;
   flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .page-heading {
@@ -548,6 +552,8 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 10px;
+  width: 100%;
+  min-width: 0;
 }
 
 .stock-card {
@@ -559,6 +565,8 @@ button:disabled {
   display: flex;
   flex-direction: column;
   transition: border-color 0.15s, box-shadow 0.15s;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .stock-card:hover {
@@ -1465,9 +1473,50 @@ tbody tr:hover {
   }
 }
 
-@media (max-width: 540px) {
+@media (max-width: 768px) {
   .stock-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+@media (max-width: 540px) {
+  .welcome-banner {
+    padding: 18px 18px;
+    margin-bottom: 14px;
+  }
+  .banner-title {
+    font-size: 17px;
+    line-height: 1.3;
+  }
+  .banner-desc {
+    font-size: 11.5px;
+    margin-bottom: 12px;
+  }
+  .banner-badge-pill {
+    font-size: 10px;
+    padding: 4px 10px;
+  }
+  .metrics-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .metric-box {
+    padding: 14px 16px 12px;
+  }
+  .metric-box-value {
+    font-size: 20px;
+    margin: 6px 0 3px;
+  }
+  .stock-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .stock-card {
+    padding: 10px 10px 8px;
+  }
+  .stock-card-number {
+    font-size: 20px;
   }
   .topbar-date {
     display: none;
@@ -1767,6 +1816,56 @@ tbody tr:hover {
 
 .inv-edit-link:hover {
   text-decoration: underline;
+}
+
+/* Warning / Stok Menipis Red Card Styling - Matches image_ec373c24.png */
+.inv-stock-card.warning,
+.stock-card.warning {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+}
+
+.inv-stock-card.warning:hover,
+.stock-card.warning:hover {
+  border-color: #fca5a5 !important;
+  box-shadow: 0 2px 8px rgba(185, 28, 28, 0.08) !important;
+}
+
+.inv-stock-card.warning .inv-card-code,
+.stock-card.warning .stock-card-code {
+  color: #991b1b !important;
+}
+
+.inv-stock-card.warning .inv-status-pill.warning,
+.stock-card.warning .stock-status-pill.warning {
+  background-color: #ffffff !important;
+  border: 1px solid #fca5a5 !important;
+  color: #b91c1c !important;
+}
+
+.inv-stock-card.warning .inv-card-qty,
+.stock-card.warning .stock-card-number {
+  color: #b91c1c !important;
+}
+
+.inv-stock-card.warning .inv-card-unit,
+.stock-card.warning .stock-card-unit {
+  color: #991b1b !important;
+}
+
+.inv-stock-card.warning .inv-card-footer,
+.stock-card.warning .stock-card-foot {
+  border-top-color: #fecaca !important;
+}
+
+.inv-stock-card.warning .inv-card-date,
+.stock-card.warning .stock-card-date {
+  color: #ef4444 !important;
+}
+
+.inv-stock-card.warning .inv-edit-link,
+.stock-card.warning .stock-card-edit-btn {
+  color: #b91c1c !important;
 }
 
 /* =========================================================================

@@ -7,12 +7,15 @@ import { initialSchema1State } from './core.js';
 let localMemoryState = JSON.parse(JSON.stringify(initialSchema1State));
 let localRevision = 1;
 
+const DEFAULT_SUPABASE_URL = 'https://deinvdgyniotdnotbncg.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaW52ZGd5bmlvdGRub3RibmNnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MzEyNjg2NywiZXhwIjoyMTA4NzAyODY3fQ.eAEpO3D9Zr0qf1FEki4NytTHFP6dTJn8lUJf4YKAu1Q';
+
 /**
  * Dapatkan konfigurasi Supabase dari environment
  */
 export function getSupabaseConfig(env = {}) {
-  const url = (env.SUPABASE_URL || process.env.SUPABASE_URL || '').trim().replace(/\/$/, '');
-  const key = (env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const url = (env.SUPABASE_URL || (typeof process !== 'undefined' ? process.env?.SUPABASE_URL : '') || DEFAULT_SUPABASE_URL).trim().replace(/\/$/, '');
+  const key = (env.SUPABASE_SERVICE_ROLE_KEY || (typeof process !== 'undefined' ? process.env?.SUPABASE_SERVICE_ROLE_KEY : '') || DEFAULT_SUPABASE_KEY).trim();
   const configured = Boolean(url && key);
   return { url, key, configured };
 }
